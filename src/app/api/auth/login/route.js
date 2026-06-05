@@ -1,7 +1,9 @@
+import { generateToken } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
     try {
@@ -28,18 +30,24 @@ export async function POST(request) {
                 message: "Password salah",
             }, { status: 401 });
         }
-        const token = jwt.sign({
-            id: user._id,
-            fullName: user.fullName,
-            phone: user.phone,
-            role: user.role,
-        }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = generateToken(user)
 
-        return Response.json({
+        const response = NextResponse.json({
             success: true,
             message: "Login berhasil",
-            token,
-        }, { status: 200 });
+        });
+
+        response.cookies.set({
+            name: "token",
+            value: token,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7,
+        });
+
+        return response;
     } catch (error) {
         console.error("LOGIN ERROR:", error);
         return Response.json({
