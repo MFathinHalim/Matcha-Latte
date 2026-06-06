@@ -34,7 +34,7 @@ export async function GET(request, context) {
     }
 
     await connectDB();
-    console.log(id)
+
     const application =
       await Application.findOne({
         _id: id,
@@ -71,9 +71,10 @@ export async function GET(request, context) {
 
 export async function DELETE(
   request,
-  { params }
+  context
 ) {
   try {
+    const { id } = await context.params;
     const token =
       request.cookies.get("token")?.value;
 
@@ -103,7 +104,7 @@ export async function DELETE(
 
     const application =
       await Application.findOne({
-        _id: params.id,
+        _id: id,
         userId: decoded.id,
       });
 

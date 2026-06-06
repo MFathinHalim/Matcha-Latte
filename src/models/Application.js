@@ -55,8 +55,12 @@ const ApplicationSchema = new mongoose.Schema(
     // Daftar dokumen
     documents: [
       {
-        name: String,
-        url: String,
+        requirement: String,
+
+        fileName: String,
+
+        fileUrl: String,
+
         uploadedAt: {
           type: Date,
           default: Date.now,

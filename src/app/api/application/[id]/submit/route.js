@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import { verifyToken } from "@/lib/auth";
 
 import Application from "@/models/Application";
+import { SERVICE_REQUIREMENTS } from "@/constants/serviceRequirements";
 
 export async function POST(request, context) {
   try {
@@ -63,7 +64,34 @@ export async function POST(request, context) {
         { status: 400 }
       );
     }
+    const requiredDocuments =  SERVICE_REQUIREMENTS[
+        application.serviceType
+      ];
 
+    const uploadedRequirements =
+      application.documents.map(
+        (doc) => doc.requirement
+      );
+
+    const missingDocuments =
+      requiredDocuments.filter(
+        (requirement) =>
+          !uploadedRequirements.includes(
+            requirement
+          )
+      );
+
+    if (missingDocuments.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Dokumen belum lengkap",
+          missingDocuments,
+        },
+        { status: 400 }
+      );
+    }
     application.status =
       "pending_review";
 
