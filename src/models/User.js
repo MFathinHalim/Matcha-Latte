@@ -11,13 +11,21 @@ const UserSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      default: "user",
+      enum: [
+        "user",
+        "admin",
+        "superadmin"
+      ],
+      default: "user"
     },
-
     province: String,
     city: String,
     district: String,
     village: String,
+    isBanned: {
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,

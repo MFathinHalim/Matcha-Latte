@@ -1,73 +1,113 @@
-import { connectDB } from "@/lib/mongodb";
-import User from "@/models/User";
 import bcrypt from "bcryptjs";
 
-export async function POST(request) {
+import { connectDB } from "@/lib/mongodb";
+
+import User from "@/models/User";
+import Otp from "@/models/Otp";
+
+import { sendWhatsapp } from "@/lib/fonnte";
+
+export async function POST(
+  request
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const { fullName, phone, password } = body;
+    const {
+      fullName,
+      phone,
+      password,
+    } = body;
 
-    if (!fullName || !phone || !password) {
+    if (
+      !fullName ||
+      !phone ||
+      !password
+    ) {
       return Response.json(
         {
           success: false,
-          message: "Semua field wajib diisi",
+          message:
+            "Semua field wajib diisi",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     await connectDB();
 
-    const existingUser = await User.findOne({
-      phone,
-    });
+    const existingUser =
+      await User.findOne({
+        phone,
+      });
 
     if (existingUser) {
       return Response.json(
         {
           success: false,
-          message: "Nomor HP sudah digunakan",
+          message:
+            "Nomor sudah digunakan",
         },
-        { status: 409 }
+        {
+          status: 409,
+        }
       );
     }
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      10
-    );
+    const code =
+      Math.floor(
+        100000 +
+          Math.random() *
+            900000
+      ).toString();
 
-    const user = await User.create({
-      fullName,
+
+    await Otp.deleteMany({
       phone,
-      password: hashedPassword,
-      role: "user",
     });
 
-    return Response.json(
-      {
-        success: true,
-        message: "Registrasi berhasil",
-        user: {
-          id: user._id,
-          fullName: user.fullName,
-          phone: user.phone,
-          role: user.role,
-        },
-      },
-      { status: 201 }
+    await Otp.create({
+      phone,
+      code,
+      fullName,
+      password,
+      used: false,
+      expiresAt:
+        new Date(
+          Date.now() +
+            5 *
+              60 *
+              1000
+        ),
+    });
+
+    await sendWhatsapp(
+      phone,
+      `Kode OTP Matcha Latte: ${code}
+
+Berlaku selama 5 menit.`
     );
+
+    return Response.json({
+      success: true,
+      message:
+        "OTP berhasil dikirim",
+    });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
+    console.error(error);
 
     return Response.json(
       {
         success: false,
-        message: "Terjadi kesalahan server",
+        message:
+          error.message,
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

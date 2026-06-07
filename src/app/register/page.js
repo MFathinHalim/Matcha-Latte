@@ -6,36 +6,81 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
-    password: "",
-  });
+  const [fullName, setFullName] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [phone, setPhone] =
+    useState("");
 
-  async function handleSubmit(e) {
+  const [password, setPassword] =
+    useState("");
+
+  const [otp, setOtp] =
+    useState("");
+
+  const [waitingOtp, setWaitingOtp] =
+    useState(false);
+
+  async function sendOtp(e) {
     e.preventDefault();
 
-    setLoading(true);
+    const res = await fetch(
+      "/api/auth/register",
+      {
+        method: "POST",
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
 
-    const data = await res.json();
+        body: JSON.stringify({
+          fullName,
+          phone,
+          password,
+        }),
+      }
+    );
 
-    setLoading(false);
+    const data =
+      await res.json();
+
+    alert(data.message);
 
     if (data.success) {
-      alert("Registrasi berhasil");
+      setWaitingOtp(true);
+    }
+  }
+
+  async function verifyOtp(
+    e
+  ) {
+    e.preventDefault();
+
+    const res = await fetch(
+      "/api/auth/verify-register",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          phone,
+          code: otp,
+        }),
+      }
+    );
+
+    const data =
+      await res.json();
+
+    alert(data.message);
+
+    if (data.success) {
       router.push("/login");
-    } else {
-      alert(data.message || "Registrasi gagal");
     }
   }
 
@@ -43,51 +88,79 @@ export default function RegisterPage() {
     <div>
       <h1>Register</h1>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="Nama Lengkap"
-          value={form.fullName}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              fullName: e.target.value,
-            })
+      {!waitingOtp ? (
+        <form
+          onSubmit={sendOtp}
+        >
+          <input
+            placeholder="Nama"
+            value={fullName}
+            onChange={(e) =>
+              setFullName(
+                e.target.value
+              )
+            }
+          />
+
+          <br />
+
+          <input
+            placeholder="Nomor HP"
+            value={phone}
+            onChange={(e) =>
+              setPhone(
+                e.target.value
+              )
+            }
+          />
+
+          <br />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+          />
+
+          <br />
+
+          <button>
+            Kirim OTP
+          </button>
+        </form>
+      ) : (
+        <form
+          onSubmit={
+            verifyOtp
           }
-        />
+        >
+          <p>
+            OTP sudah
+            dikirim ke WA
+          </p>
 
-        <br />
+          <input
+            placeholder="OTP"
+            value={otp}
+            onChange={(e) =>
+              setOtp(
+                e.target.value
+              )
+            }
+          />
 
-        <input
-          placeholder="Nomor Telepon"
-          value={form.phone}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              phone: e.target.value,
-            })
-          }
-        />
+          <br />
 
-        <br />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              password: e.target.value,
-            })
-          }
-        />
-
-        <br />
-
-        <button disabled={loading}>
-          {loading ? "Loading..." : "Daftar"}
-        </button>
-      </form>
+          <button>
+            Verifikasi
+          </button>
+        </form>
+      )}
     </div>
   );
 }

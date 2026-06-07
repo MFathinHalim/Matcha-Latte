@@ -23,12 +23,23 @@ export async function POST(request) {
                 message: "Nomor HP tidak ditemukan",
             }, { status: 404 });
         }
+        console.log(user.password)
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return Response.json({
                 success: false,
                 message: "Password salah",
             }, { status: 401 });
+        }
+        if (user.isBanned) {
+            return NextResponse.json(
+                {
+                success: false,
+                message:
+                    "Akun diblokir",
+                },
+                { status: 403 }
+            );
         }
         const token = generateToken(user)
 
